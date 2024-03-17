@@ -1,3 +1,5 @@
 /Others
 .env
 .cache
+/.ipynb_checkpoints
+/Data/song_details_raw.csv
