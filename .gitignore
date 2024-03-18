@@ -3,3 +3,7 @@
 .cache
 /.ipynb_checkpoints
 /Data/song_details_raw.csv
+/Data/Unique_Song_With_Lyrics.xlsx
+/Data/lyrics_lang.csv
+/Data/song_details_lyrics_en.csv
+
