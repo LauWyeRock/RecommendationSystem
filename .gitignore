@@ -9,4 +9,14 @@
 /KnowledgeGraph/Lyrics/*.xlsx
 /KnowledgeGraph/Lyrics/*.pkl
 /KnowledgeGraph/Lyrics/tokenized_data.pkl
+/Data/Unique_Song_Eng_Lyrics.xlsx
+/Data/Profanity_Polarity_Emotion.xlsx
+/Data/unique_songs_lyrics_clean.csv
+/Data/unique_songs_lyrics_clean.xlsx
+/Data/lyrics_again.csv
+/Data/getting_lyrics_again.csv
+/Data/unique_songs_lyrics.xlsx
+/Data/unique_songs_lyrics.csv
+/Data/song_details_lyrics_clean.csv
+/Data/wr_audio.csv
 
