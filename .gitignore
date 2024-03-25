@@ -2,7 +2,8 @@
 .env
 .cache
 /.ipynb_checkpoints
-/Data
+/Data/*.xlsx
+/Data/*.csv
 /KnowledgeGraph/Lyrics/*.xlsx
 /KnowledgeGraph/Lyrics/*.pkl
 /KnowledgeGraph/Lyrics/*.csv
