@@ -8,7 +8,7 @@
 /KnowledgeGraph/Lyrics/*.pkl
 /KnowledgeGraph/Lyrics/*.csv
 /KnowledgeGraph/Lyrics/tokenized_data.pkl
-!Data/lastfm_user_clean.csv
-!Data/unique_songs_clean.csv
-!Data/song_details_clean.csv
+# !Data/lastfm_user_clean.csv
+# !Data/unique_songs_clean.csv
+# !Data/song_details_clean.csv
 *.pkl
