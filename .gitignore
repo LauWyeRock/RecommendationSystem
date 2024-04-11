@@ -12,3 +12,4 @@
 # !Data/unique_songs_clean.csv
 # !Data/song_details_clean.csv
 *.pkl
+*.zip
