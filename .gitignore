@@ -13,3 +13,4 @@
 # !Data/song_details_clean.csv
 *.pkl
 *.zip
+/Fallback/NCF_model_trained
