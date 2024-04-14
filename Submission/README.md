@@ -47,6 +47,23 @@ The dataset contains audio features and lyrics features of songs and information
 - Chroma Frequencies: Chroma feature represents the tone of music or sound by projecting its sound spectrum into a space that represents musical octave. This feature is usually used in chord recognition task.
 
 
+### Sequential Data for LSTM model
+(Step4D_LSTM.ipynb)
+We extract users' recent tracks from lastfm. These pertain to User data, where we want to get their recent tracks from up to one month ago. We limit it to 100 tracks per user. This is run on unique users from the user-song dataset. 
+
+Timestamp Conversion: The 'Timestamp' column, is converted into a datetime format. This allows for extracting more granular time information such as hours.
+
+Time of Day: 'Time_of_Day' feature by extracting the hour from the timestamp. This is done to capture patterns in listening behavior based on the time of day.
+
+Combining Artist and Track: The 'Artist' and 'Track Name' columns are combined into a single 'Artist_Track' column. This creates a unique identifier for each artist-track combination 
+
+One-Hot Encoding Time of Day
+
+Label Encoding Artist-Track: The 'Artist_Track' combinations are label-encoded, assigning a unique integer to each unique artist-track string. This is necessary for the model to process textual/categorical data.
+
+Concatenate the original dataframe with the one-hot encoded 'Time_of_Day' features, expanding the feature set to include this time information explicitly.
+
+
 ## 3. EDA
 (Step2_EDA.ipynb)
 
@@ -75,11 +92,11 @@ Obtain 6 principal components which explain about 82.17% of total variance in da
 
 ## Cosine Similarity
 (Step3_CosineSimilarity.ipynb)
-We explore content-based filtering method. We use the 6 different Principal Components to find the top 5 most similar tracks using cosine similarity, denoted by 'angular' using the Annoy package. The output of this was then utlized in GCN models.
+We explore content-based filtering method. We use the 6 different Principal Components to find the top 5 most similar tracks using cosine similarity, denoted by 'angular' using the Annoy package. This method was run on the entire dataset and the output of this was then utlized in GCN models.
 
 ## KMeans
 (Step3A_KMeans.ipynb)
-We explore content-based filtering method. Songs are described with a set of lyrics and audio features, or the principal components generated during feature engineering. We assume users prefer to listen to songs that are similar to what they have listened to before. Given a song, we provide recommendation of top 30 most similar songs from the same cluster.
+We explore content-based filtering method. Songs are described with a set of lyrics and audio features, or the principal components generated during feature engineering. We assume users prefer to listen to songs that are similar to what they have listened to before. Given a song, we create a function to recommend the top 30 most similar songs from the same cluster.
 
 ## KNN
 (Step4_KNN.ipynb)
@@ -107,6 +124,7 @@ If a song was played by a user, it is relevant to them. Songs from the test set 
 
 ## LightFM
 (Step4B_LightFM.ipynb)
+This model can only be run locally as there will be RAM limit error on Colab.
 LightFM is a Python implementation of a Factorization Machine recommendation algorithm for both implicit and explicit feedbacks. It is a Factorization Machine model which represents users and items as linear combinations of their content features’ latent factors. The model learns embeddings or latent representations of the users and items in such a way that it encodes user preferences over items. These representations produce scores for every item for a given user; items scored highly are more likely to be interesting to the user.
 
 The user and item embeddings are estimated for every feature, and these features are then added together to be the final representations for users and items. For example, for user i, the model retrieves the i-th row of the feature matrix to find the features with non-zero weights. The embeddings for these features will then be added together to become the user representation e.g. if user 10 has weight 1 in the 5th column of the user feature matrix, and weight 3 in the 20th column, the user 10’s representation is the sum of embedding for the 5th and the 20th features multiplying their corresponding weights. The representation for each items is computed in the same approach.
@@ -138,6 +156,7 @@ Reference: https://github.com/recommenders-team/recommenders/blob/main/examples/
 
 ## NCF
 (Step4C_NCF.ipynb)
+This model can only be run locally as there will be RAM limit error on Colab.
 Neural Collaborative Filtering (NCF) is an algorithm based on deep neural networks to tackle collaborative filtering on the basis of implicit feedback. Since we are using neural networks to find relation between users and items, we can easily scale the solution to large datasets. Thus making this method better than item based collaborative filtering.
 
 NCF works by first representing users and items as vectors in a latent space. These vectors are then used to calculate a score for each user-item pair. The score is then used to predict whether the user will interact with the item. NCF is useful because it can learn non-linear relationships between users and items. This makes it a more powerful model than traditional matrix factorization methods.
@@ -172,14 +191,153 @@ As suggested by the reference paper, we also constructed dataset for "leave-one-
 We truncated the ranked list at 10 for both metrics. As such, the HR intuitively measures whether the test item is present on the top-10 list, and the NDCG accounts for the position of the hit by assigning higher scores to hits at top ranks.
 
 
-### LSTM
+## LSTM
 (Step4D_LSTM.ipynb)
-We obtain 
+This model can only be run locally as there will be RAM limit error on Colab.
 
+We explore sequential recommendation. A sequence length of 3 is specified, which means using sequences of two previous songs listened to by a user to predict the next song.
+
+Sequence and Label Creation: For each user, sort their listening events by timestamp and create sequences of artist-track encodings along with their corresponding time-of-day features. Each sequence (excluding the last element) serves as input, and the next song (the last element in the sequence) is the label/target.
+Input Sequence: Comprises the label-encoded artist-track IDs for two consecutive songs, concatenated with the one-hot encoded time features for those songs, flattened into a single vector.
+Label: The label-encoded artist-track ID for the song following the sequence.
+
+Split the structured sequences into training and test sets, ensuring that the sequences are not shuffled (shuffle=False). This is important for time series data to maintain the temporal order.
+
+The input sequences are split into two parts: one containing the artist-track features (first two elements of each sequence) and another containing the time-of-day features (the rest of the sequence).
+This separation facilitates different handling or processing paths in the neural network model, allowing for specialized layers (e.g., an embedding layer for artist-track features and a dense layer for time features).
+
+### Model Specification
+set_global_policy('mixed_float16'): This configures TensorFlow to use mixed precision training, which combines float32 and float16 data types to improve performance and reduce memory usage without compromising the model's accuracy. This significantly accelerates training on compatible hardware (GPUs with tensor cores).
+
+EarlyStopping: A callback to stop training when a monitored metric has stopped improving, preventing overfitting. Here, we monitor validation loss ('val_loss'), with a patience of 10 epochs (i.e., training will stop if there is no improvement in validation loss for 10 consecutive epochs). 
+
+Embedding Layer: Maps the integer-encoded artist-track IDs to dense vectors. This layer helps the model to understand the relationships between different IDs by projecting them into a continuous vector space.
+
+LSTM Layer: Processes the sequences of embeddings with 40 units, using dropout and recurrent dropout to prevent overfitting.
+
+Dense Time Features Layer: A dense layer that processes the one-hot encoded time features.
+
+Output Layer: The final dense layer uses softmax activation to output a probability distribution over all possible artist-track IDs, corresponding to the model's prediction of the next song.
+
+The model is compiled with the sparse_categorical_crossentropy loss function. The Adam optimizer is used with a learning rate of 0.001.
+
+Determining Top-k Classes: The model's predictions are probabilities for each class. To evaluate its performance in a top-k context, we are interested in the classes with the highest probabilities. np.argsort(y_pred_prob, axis=1)[:, -k:][:, ::-1] sorts the classes by their predicted probabilities and selects the top 30 for each example. The [:, ::-1] part reverses the columns because np.argsort returns them in ascending order, and you want the highest probabilities first.
+
+Transforming Indices to Class Names: label_encoder.inverse_transform(top_k_indices.flatten()).reshape(top_k_indices.shape) takes these top-k indices and converts them back into the original class labels (song names or IDs) using the inverse of the label encoding applied earlier.
+
+## GCN Exploration
+(Step4E_GCN_Exploration.ipynb)
+Before running GCN models on the full dataset which has a time cost, we explore different model specifications of this model to find an optimal choice for later.
+
+We construct the graph and provide visualizations for graph data. 
+
+A train/validation/test split is used to achieve this by dividing the dataset into three sets: the training set, used to train the model; the validation set, used to tune the model's hyperparameters and prevent overfitting; and the test set, used to evaluate the model's performance on unseen data. We use a 70%-15%-15% split. For graph, we found a useful PyG method `RandomLinkSplit`, which works by randomly removing a specified percentage of the edges in the graph. The split is performed such that the training split doesn't include edges in the validation and test splits; and the validation split doesn't include edges in the test split. Also, since we plan to implement our own negative samplign algorithm we set add_negative_train_samples and neg_sampling_ratio to zero.
+
+### LightGCN
+To implement our model, we will be using the LightGCN architecture. This architecture forms a simple GNN method where we remove nonlinearity across layers. This leads to a highly scalable architecture with fewer parameters. By taking a weighted sum of the embeddings at different hop scales (also called multi-scale diffusion), LightGCN has exhibited better performance than other neural graph collaborative filtering approaches while also being computationally efficient. To implement our models, we will customize the implementation of LightGCN from PyG.
+
+One important note: the GNN method we are defining below acts as our full graph neural network, consisting of multiple message passing layers that are connected with skip connections (weighted according to the alpha parameter). We surface functionality to change the message passing layer from the default LightGCN layer to alternatives, such as a GAT and GraphSAGE convolution instead, as well as to have a learnable alpha parameter.
+
+The three convolutional layers we use are the LGConv (from LightGCN), SAGEConv (GraphSAGE), and GATConv (GAT). We add a linear layer on top of the GATConv to take the concatenated outputs from the multiple attention heads back to the embedding dimension. Below we provide the update steps for each type of layer.
+
+1. LGConv
+
+\begin{equation*}
+\mathbf{e}_i^{(k+1)} = \underset{j \in \mathcal{N}(i)}{\sum} \frac{1}{
+  \sqrt{| \mathcal{N}(i)|} \sqrt{| \mathcal{N}(j)|} } \mathbf{e}_j^{(k)}
+\end{equation*}
+
+
+2. SAGEConv
+
+\begin{equation*}
+\mathbf{e}^{(k+1)}_{i} = \mathbf{W}_1 \mathbf{e}^{(k)}_{i} + \mathbf{W}_2 \frac{1}{| \mathcal{N}(i)|} \underset{j \in \mathcal{N}(i)}{\sum} \mathbf{e}^{(k)}_j
+\end{equation*}
+
+3. GATConv
+
+\begin{align*}
+    \mathbf{e}^{(k+1)}_i &= \mathbf{\Theta}\mathbf{x}_i^{(k+1)} + \mathbf{B} \\
+    \mathbf{x}_i^{(k+1)} &= \underset{h=1}{\Big\Vert^H} \sum_{j \in \mathcal{N}(i) \cup \{i\} } \alpha_{ij}^h \mathbf{W}^h
+    \mathbf{e}^{(k)}_j \\
+    \alpha^h_{ij} &= \frac{
+    \exp(
+    \text{LeakyReLU}(\mathbf{a}^{h^{T}} \left[\mathbf{W}^h \mathbf{e}_i \Vert \mathbf{W}^h \mathbf{e}_j \right]))
+    }{
+    \underset{l \in \mathcal{N}(i) \cup \{i\}}{\sum}     \exp(
+    \text{LeakyReLU}(\mathbf{a}^{h^{T}} \left[\mathbf{W}^h \mathbf{e}_i \Vert \mathbf{W}^h \mathbf{e}_l \right]))
+    }
+\end{align*}
+
+
+No matter which convolutional layer we use, we still take the weighted sum of the different layers as is standard in LightGCN. We do so as follows:
+
+\begin{equation*}
+    \mathbf{e}_i = \sum_{k=1}^K \alpha_k \mathbf{e}^{(k)}_i
+\end{equation*}
+
+
+Our main specifications will use a Bayesian Personalized Ranking, which is calculated as
+
+\begin{equation*}
+    \text{BPR Loss}(i) = \frac{1}{|\mathcal{E}(i)|} \underset{{(i, j_{+}) \in \mathcal{E}(i)}}{\sum} \log \sigma \left( \text{score}(i, j_+) - \text{score}(i, j_-) \right)
+\end{equation*}
+
+for a pair of positive edge $(i, j_{+})$ and negative edge $(i, j_{-})$. More on how we define a negative edge later.
+
+### Negative Sampling
+Important to any link prediction task is negative sampling. In the graph, we observe positive edges, which allows us to capture which nodes should be most similar to one another. Adding negative edges allows the model to explicitly capture that nodes that don't share an edge should have different embeddings. Without negative edges, you can convince yourself that a valid loss minimization strategy would be to simply assign all nodes the same embedding, which is obviously not meaningful or desirable.
+
+Consequently, in this section, we define our negative sampling strategy. In particular, we take three approaches:
+1. Random, no positive check: for each positive edge coming from a playlist $p_i$, randomly draw a track $t_j$ from the full set of track nodes such that ($p_i$, $t_j$) is the negative edge. For computational efficiency, we don't check if ($p_i$, $t_j$) is actually a negative edge, though probabilistically it is very likely.
+2. Random, positive check: for each positive edge coming from a playlist $p_i$, randomly draw a track $t_j$ from the full set of track nodes such that ($p_i$, $t_j$) is the negative edge. We ensure that ($p_i$, $t_j$) is not a positive edge.
+3. Hard: for each positive edge coming from a playlist $p_i$, randomly draw a track $t_j$ from the top $k$ proportion of tracks, ranked by dot product similarity to $p_i$. For epoch 0, $k = 1$ and we lower it at each subsequent iteration.
+
+Since the result from the model with the 'LGC' convolutional layer is the best, we will be using that for the full dataset. In addition, to uniform the evaluation metrics, we will be using recall@30 instead. The full model code can be found in Step4F_GCN_full.ipynb file
+
+
+## GCN on Full Dataset
+(Step4F_GCN_Full.ipynb)
+This model can only be run locally as there will be RAM limit error on Colab.
+
+As mentioned in the GCN_model_comparison_on_smaller_dataset.ipynb, this file will be running a GCN model with 'LGC', lightGCN layer, on the full dataset and using K=30 for prediction of k songs.
+
+We first constructing the nodes for tracks , users with their attributes. For each user, we get the list of their top songs, which is a track class object. We construct the graph & split the data into train-validation-test set (0.7-0.15-0.15). We then construct the GCN model. Do note that for our final result, only the model with 'LGC' LightGCN convolutional layer is run on the entire dataset due to time and computation power constraints. Other convolutional layers were explored on a subset of data only. 
+
+Our main specifications will use a Bayesian Personalized Ranking, which is calculated as
+
+\begin{equation*}
+    \text{BPR Loss}(i) = \frac{1}{|\mathcal{E}(i)|} \underset{{(i, j_{+}) \in \mathcal{E}(i)}}{\sum} \log \sigma \left( \text{score}(i, j_+) - \text{score}(i, j_-) \right)
+\end{equation*}
+
+for a pair of positive edge $(i, j_{+})$ and negative edge $(i, j_{-})$. More on how we define a negative edge later.
+
+Since our model focuses on the prediction of link between user and track node, a negative edge means that there is no link between such two nodes.
+
+Important to any link prediction task is negative sampling. In the graph, we observe positive edges, which allows us to capture which nodes should be most similar to one another. Adding negative edges allows the model to explicitly capture that nodes that don't share an edge should have different embeddings. Without negative edges, you can convince yourself that a valid loss minimization strategy would be to simply assign all nodes the same embedding, which is obviously not meaningful or desirable.
+
+Consequently, in this section, we define our negative sampling strategy. In particular, we take three approaches:
+1. Random, no positive check: for each positive edge coming from a playlist $p_i$, randomly draw a track $t_j$ from the full set of track nodes such that ($p_i$, $t_j$) is the negative edge. For computational efficiency, we don't check if ($p_i$, $t_j$) is actually a negative edge, though probabilistically it is very likely.
+2. Random, positive check: for each positive edge coming from a playlist $p_i$, randomly draw a track $t_j$ from the full set of track nodes such that ($p_i$, $t_j$) is the negative edge. We ensure that ($p_i$, $t_j$) is not a positive edge.
+3. Hard: for each positive edge coming from a playlist $p_i$, randomly draw a track $t_j$ from the top $k$ proportion of tracks, ranked by dot product similarity to $p_i$. For epoch 0, $k = 1$ and we lower it at each subsequent iteration.
+
+### GCN Evaluation
+(Step4G_GCN_Evaluation.ipynb)
+The evaluation metrics on top of loss calculation: recall at K.For a playlist $i$, $P^k_i$ represents the set of the top $k$ predicted tracks for $i$ and $R_i$ the ground truth of connected tracks to playlist $i$, then we calculate
+$$
+\text{recall}^k_i = \frac{| P^k_i \cap R_i | }{|R_i|}.
+$$
+If $R_i = 0$, then we assign this value to 1. Note, if $R_i \subset P_i^k$, then the recall is equal to 1. Hence, our choice of $k$ matters a lot.
+
+Note: when evaluating this metric on our validation or test set, we need to make sure to filter the message passing edges from consideration, as the model can directly observe these.
+
+We choose a value of $k = 30$ in this case, as each user has 50 songs in their top songs.
+
+Since running the LightGCN model on the full dataset did not include the metrics of diversity, we evaluated such metrics by retrieving the final embedding learnt by the LightGCN model and use them to predict the top songs at k =30, and generate relevant metrics and visualising the evaluation.
 
 
 # Evaluation of Models
-We generally use the following evaluation metrics for all models developed:
+We generally used the following evaluation metrics for all models developed:
 
 - Ranking Metrics: These are used to evaluate how relevant recommendations are for users
 
@@ -190,17 +348,6 @@ Normalized Discounted Cumulative Gain (NDCG) - evaluates how well the predicted 
 Precision - this measures the proportion of recommended items that are relevant
 
 Recall - this measures the proportion of relevant items that are recommended
-
-
-- Rating Metrics: These are used to evaluate how accurate a recommender is at predicting ratings that users gave to items
-
-Root Mean Square Error (RMSE) - measure of average error in predicted ratings
-
-R Squared (R2) - essentially how much of the total variation is explained by the model
-
-Mean Absolute Error (MAE) - similar to RMSE but uses absolute value instead of squaring and taking the root of the average
-
-Explained Variance - how much of the variance in the data is explained by the model
 
 
 - Non accuracy based metrics: These do not compare predictions against ground truth but instead evaluate the following properties of the recommendations
