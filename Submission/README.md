@@ -190,6 +190,12 @@ As suggested by the reference paper, we also constructed dataset for "leave-one-
 
 We truncated the ranked list at 10 for both metrics. As such, the HR intuitively measures whether the test item is present on the top-10 list, and the NDCG accounts for the position of the hit by assigning higher scores to hits at top ranks.
 
+### NCF with Pre-trained MLP and GMF
+To get better performance of NeuMF, we can adopt pre-training strategy. We train GMF and MLP and then use their model parameters as the initialization for the corresponding parts of NeuMF’s parameters. To get better performance of NeuMF, we can adopt pre-training strategy. We train GMF and MLP and then use their model parameters as the initialization for the corresponding parts of NeuMF’s parameters. 
+
+We then evaluate pre-trained model using the same evaluation metrics. Compared with not pre-trained NMF, all evaluation metrics had slight improvements. The performance of pre-trained NCF is better than the not pre-trained.
+
+
 
 ## LSTM
 (Step4D_LSTM.ipynb)
