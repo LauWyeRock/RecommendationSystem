@@ -248,21 +248,21 @@ The three convolutional layers we use are the LGConv (from LightGCN), SAGEConv (
 
 1. LGConv
 
-\begin{equation*}
+$$\begin{equation*}
 \mathbf{e}_i^{(k+1)} = \underset{j \in \mathcal{N}(i)}{\sum} \frac{1}{
   \sqrt{| \mathcal{N}(i)|} \sqrt{| \mathcal{N}(j)|} } \mathbf{e}_j^{(k)}
-\end{equation*}
+\end{equation*}$$
 
 
 2. SAGEConv
 
-\begin{equation*}
+$$\begin{equation*}
 \mathbf{e}^{(k+1)}_{i} = \mathbf{W}_1 \mathbf{e}^{(k)}_{i} + \mathbf{W}_2 \frac{1}{| \mathcal{N}(i)|} \underset{j \in \mathcal{N}(i)}{\sum} \mathbf{e}^{(k)}_j
-\end{equation*}
+\end{equation*}$$
 
 3. GATConv
 
-\begin{align*}
+$$\begin{align*}
     \mathbf{e}^{(k+1)}_i &= \mathbf{\Theta}\mathbf{x}_i^{(k+1)} + \mathbf{B} \\
     \mathbf{x}_i^{(k+1)} &= \underset{h=1}{\Big\Vert^H} \sum_{j \in \mathcal{N}(i) \cup \{i\} } \alpha_{ij}^h \mathbf{W}^h
     \mathbf{e}^{(k)}_j \\
@@ -273,21 +273,21 @@ The three convolutional layers we use are the LGConv (from LightGCN), SAGEConv (
     \underset{l \in \mathcal{N}(i) \cup \{i\}}{\sum}     \exp(
     \text{LeakyReLU}(\mathbf{a}^{h^{T}} \left[\mathbf{W}^h \mathbf{e}_i \Vert \mathbf{W}^h \mathbf{e}_l \right]))
     }
-\end{align*}
+\end{align*}$$
 
 
 No matter which convolutional layer we use, we still take the weighted sum of the different layers as is standard in LightGCN. We do so as follows:
 
-\begin{equation*}
+$$\begin{equation*}
     \mathbf{e}_i = \sum_{k=1}^K \alpha_k \mathbf{e}^{(k)}_i
-\end{equation*}
+\end{equation*}$$
 
 
 Our main specifications will use a Bayesian Personalized Ranking, which is calculated as
 
-\begin{equation*}
+$$\begin{equation*}
     \text{BPR Loss}(i) = \frac{1}{|\mathcal{E}(i)|} \underset{{(i, j_{+}) \in \mathcal{E}(i)}}{\sum} \log \sigma \left( \text{score}(i, j_+) - \text{score}(i, j_-) \right)
-\end{equation*}
+\end{equation*}$$
 
 for a pair of positive edge $(i, j_{+})$ and negative edge $(i, j_{-})$. More on how we define a negative edge later.
 
@@ -312,9 +312,9 @@ We first constructing the nodes for tracks , users with their attributes. For ea
 
 Our main specifications will use a Bayesian Personalized Ranking, which is calculated as
 
-\begin{equation*}
+$$\begin{equation*}
     \text{BPR Loss}(i) = \frac{1}{|\mathcal{E}(i)|} \underset{{(i, j_{+}) \in \mathcal{E}(i)}}{\sum} \log \sigma \left( \text{score}(i, j_+) - \text{score}(i, j_-) \right)
-\end{equation*}
+\end{equation*}$$
 
 for a pair of positive edge $(i, j_{+})$ and negative edge $(i, j_{-})$. More on how we define a negative edge later.
 
