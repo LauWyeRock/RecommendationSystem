@@ -107,7 +107,7 @@ We used the `Username`, `track_name` and `artist_name` and `playcount` from the 
 
 ## Implicit
 (Step4A_Implicit.ipynb)
-Recommendations are based on the users' behavior (e.g., playcounts of songs) rather than explicit ratings. The code is using a collaborative filtering approach with the Alternating Least Squares (ALS) algorithm. We recommend both seen and unseen songs (Unseen means between training and test set). We use `user_songs_filtered.csv` and AlternatingLeastSquares model from the implicit library, which primarily focuses on matrix factorization techniques that work directly with user-item interaction data. It doesn't natively support incorporating user or item features directly into the model during the matrix factorization process in the way that models like LightFM do, which are designed as hybrid recommendation models capable of utilizing both interaction data and metadata (e.g., genre, user demographics).
+Recommendations are based on the users' behavior (e.g., playcounts of songs) rather than explicit ratings. The code is using a collaborative filtering approach with the Alternating Least Squares (ALS) algorithm. We use `user_songs_filtered.csv` and AlternatingLeastSquares model from the implicit library, which primarily focuses on matrix factorization techniques that work directly with user-item interaction data. It doesn't natively support incorporating user or item features directly into the model during the matrix factorization process in the way that models like LightFM do.
 
 For model evaluation, we have the following metrics: 
 
@@ -119,13 +119,14 @@ NDCG: The Normalized Discounted Cumulative Gain accounts for the position of the
 
 MAP: The Mean Average Precision at K averages the precision at each rank for the relevant items and considers the order in which the relevant items appear.
 
+The above, together with recall and diversity using recommenders library, are used to evaluate the model performances. 
+
 If a song was played by a user, it is relevant to them. Songs from the test set that the user has played but were not in the training set are used as the ground truth for relevance.
 
 
 ## LightFM
 (Step4B_LightFM.ipynb)
-This model can only be run locally as there will be RAM limit error on Colab.
-LightFM is a Python implementation of a Factorization Machine recommendation algorithm for both implicit and explicit feedbacks. It is a Factorization Machine model which represents users and items as linear combinations of their content features’ latent factors. The model learns embeddings or latent representations of the users and items in such a way that it encodes user preferences over items. These representations produce scores for every item for a given user; items scored highly are more likely to be interesting to the user.
+LightFM is a Python implementation of a Factorization Machine recommendation algorithm. It is a Factorization Machine model which represents users and items as linear combinations of their content features’ latent factors. The model learns embeddings or latent representations of the users and items in such a way that it encodes user preferences over items. These representations produce scores for every item for a given user; items scored highly are more likely to be interesting to the user.
 
 The user and item embeddings are estimated for every feature, and these features are then added together to be the final representations for users and items. For example, for user i, the model retrieves the i-th row of the feature matrix to find the features with non-zero weights. The embeddings for these features will then be added together to become the user representation e.g. if user 10 has weight 1 in the 5th column of the user feature matrix, and weight 3 in the 20th column, the user 10’s representation is the sum of embedding for the 5th and the 20th features multiplying their corresponding weights. The representation for each items is computed in the same approach.
 
