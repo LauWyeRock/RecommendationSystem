@@ -341,6 +341,44 @@ We choose a value of $k = 30$ in this case, as each user has 50 songs in their t
 
 Since running the LightGCN model on the full dataset did not include the metrics of diversity, we evaluated such metrics by retrieving the final embedding learnt by the LightGCN model and use them to predict the top songs at k =30, and generate relevant metrics and visualising the evaluation.
 
+## GCN on Full Dataset
+(Step4H_Non-Bipartite_GCN_Full.ipynb)
+Similar to the Bipartite-GCN in Step 4F, his model can only be run locally as there will be RAM limit error on Colab.
+
+The difference between this model in Step 4H and the model in Step 4F is that this model contains song-song weighted edges, where the edges between any given 2 song nodes are weighted with their cosine similarity scores. As such, the embeddings will contain both user - song weighted edges, as well as song - song weighted edges.
+
+As mentioned in the GCN_model_comparison_on_smaller_dataset.ipynb, this file will be running a GCN model with 'LGC', lightGCN layer, on the full dataset and using K=30 for prediction of k songs.
+
+We first constructing the nodes for tracks , users with their attributes. For each user, we get the list of their top songs, which is a track class object. We construct the graph & split the data into train-validation-test set (0.7-0.15-0.15). We then construct the GCN model. Do note that for our final result, only the model with 'LGC' LightGCN convolutional layer is run on the entire dataset due to time and computation power constraints. Other convolutional layers were explored on a subset of data only. 
+
+Our main specifications will use a Bayesian Personalized Ranking, which is calculated as
+
+\begin{equation*}
+    \text{BPR Loss}(i) = \frac{1}{|\mathcal{E}(i)|} \underset{{(i, j_{+}) \in \mathcal{E}(i)}}{\sum} \log \sigma \left( \text{score}(i, j_+) - \text{score}(i, j_-) \right)
+\end{equation*}
+
+for a pair of positive edge $(i, j_{+})$ and negative edge $(i, j_{-})$. More on how we define a negative edge later.
+
+Since our model focuses on the prediction of link between user and track node, a negative edge means that there is no link between such two nodes.
+
+Important to any link prediction task is negative sampling. In the graph, we observe positive edges, which allows us to capture which nodes should be most similar to one another. Adding negative edges allows the model to explicitly capture that nodes that don't share an edge should have different embeddings. Without negative edges, you can convince yourself that a valid loss minimization strategy would be to simply assign all nodes the same embedding, which is obviously not meaningful or desirable.
+
+The negative sampling strategy used was Random.
+
+### GCN Evaluation
+(Step4I_Non-Bipartite_GCN_Evaluation.ipynb)
+Similar to the GCN Evaluation run on the Bipartite-GCN, the evaluation metrics on top of loss calculation: recall at K. For a user $i$, $P^k_i$ represents the set of the top $k$ predicted tracks for $i$ and $R_i$ the ground truth of connected tracks to user $i$, then we calculate
+$$
+\text{recall}^k_i = \frac{| P^k_i \cap R_i | }{|R_i|}.
+$$
+If $R_i = 0$, then we assign this value to 1. Note, if $R_i \subset P_i^k$, then the recall is equal to 1. Hence, our choice of $k$ matters a lot.
+
+Note: when evaluating this metric on our validation or test set, we need to make sure to filter the message passing edges from consideration, as the model can directly observe these.
+
+We choose a value of $k = 30$ in this case, as each user has 50 songs in their top songs.
+
+Since running the LightGCN model on the full dataset did not include the metrics of diversity, we evaluated such metrics by retrieving the final embedding learnt by the LightGCN model and use them to predict the top songs at k =30, and generate relevant metrics and visualising the evaluation.
+
 
 # Evaluation of Models
 We generally used the following evaluation metrics for all models developed:
